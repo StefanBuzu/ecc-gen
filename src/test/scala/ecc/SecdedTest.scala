@@ -43,4 +43,11 @@ class SecdedModelTest extends AnyFlatSpec {
     val res = HammingModel.decode(code, cw.flipBit(code.codeWidth - 1))
     assert(res == DecodeResult(0xa5, corrected = true, uncorrectable = false, syndrome = 0))
   }
+
+  it should "flag a double bit flip as uncorrectable" in {
+    val code = HammingCode(8, secded = true)
+    val cw = HammingModel.encode(code, 0x3c)
+    val res = HammingModel.decode(code, cw.flipBit(2).flipBit(9))
+    assert(res.uncorrectable && !res.corrected)
+  }
 }

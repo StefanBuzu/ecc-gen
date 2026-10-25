@@ -48,7 +48,10 @@ object HammingModel {
     val data = code.dataPositions.zipWithIndex.foldLeft(BigInt(0)) { case (d, (pos, i)) =>
       if (fixed.testBit(pos - 1)) d.setBit(i) else d
     }
-    DecodeResult(data, corrected = syndrome != 0, syndrome = syndrome)
+    // SECDED: an odd number of ones in the whole word means an odd number of flips,
+    // so a zero syndrome with odd parity is a flip of the parity bit itself
+    val oddParity = code.secded && codeword.bitCount % 2 == 1
+    DecodeResult(data, corrected = syndrome != 0 || oddParity, syndrome = syndrome)
   }
 }
 

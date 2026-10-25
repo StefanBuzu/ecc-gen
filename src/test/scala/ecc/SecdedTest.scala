@@ -50,4 +50,45 @@ class SecdedModelTest extends AnyFlatSpec {
     val res = HammingModel.decode(code, cw.flipBit(2).flipBit(9))
     assert(res.uncorrectable && !res.corrected)
   }
+
+  for (w <- widths) {
+    val code = HammingCode(w, secded = true)
+
+    it should s"leave data unchanged and set no flags without an error ($w data bits)" in {
+      for (data <- testData(w)) {
+        val res = HammingModel.decode(code, HammingModel.encode(code, data))
+        assert(res == DecodeResult(data, corrected = false, uncorrectable = false, syndrome = 0), s"data 0x${data.toString(16)}")
+      }
+    }
+  }
+
+  for (w <- widths) {
+    val code = HammingCode(w, secded = true)
+
+    it should s"fix every single bit flip and set corrected ($w data bits)" in {
+      for (data <- testData(w); bit <- 0 until code.codeWidth) {
+        val cw = HammingModel.encode(code, data)
+        val res = HammingModel.decode(code, cw.flipBit(bit))
+        val msg = s"data 0x${data.toString(16)}, bit $bit flipped"
+        assert(res.data == data, msg)
+        assert(res.corrected && !res.uncorrectable, msg)
+        // syndrome: position of the flipped bit, 0 for the extra parity bit (the MSB)
+        assert(res.syndrome == (if (bit == code.hammingWidth) 0 else bit + 1), msg)
+      }
+    }
+  }
+
+  for (w <- widths) {
+    val code = HammingCode(w, secded = true)
+
+    it should s"flag every double bit flip as uncorrectable ($w data bits)" in {
+      for (data <- testData(w); a <- 0 until code.codeWidth; b <- a + 1 until code.codeWidth) {
+        val cw = HammingModel.encode(code, data)
+        val res = HammingModel.decode(code, cw.flipBit(a).flipBit(b))
+        val msg = s"data 0x${data.toString(16)}, bits $a and $b flipped"
+        assert(res.uncorrectable, msg)
+        assert(!res.corrected, msg)
+      }
+    }
+  }
 }

@@ -12,6 +12,15 @@ import scala.util.Random
   * of all set bits in a code word is its syndrome. For encoding, the check bits
   * are chosen such that this XOR becomes zero.
   */
+/** Result of decoding a code word.
+  *
+  * @param data          the (corrected) data word
+  * @param corrected     exactly one bit was flipped and has been fixed
+  * @param uncorrectable two bits were flipped (SECDED only)
+  * @param syndrome      position of the flipped bit (0 = no error)
+  */
+case class DecodeResult(data: BigInt, corrected: Boolean, uncorrectable: Boolean = false, syndrome: Int = 0)
+
 object HammingModel {
 
   private def setPositions(word: BigInt, width: Int): Seq[Int] =
@@ -23,20 +32,29 @@ object HammingModel {
       if (data.testBit(i)) w.setBit(pos - 1) else w
     }
     // the check bits are the binary representation of the XOR of all data positions
-    val checks = setPositions(withData, code.codeWidth).foldLeft(0)(_ ^ _)
-    code.checkPositions.zipWithIndex.foldLeft(withData) { case (w, (pos, i)) =>
+    val checks = setPositions(withData, code.hammingWidth).foldLeft(0)(_ ^ _)
+    val hamming = code.checkPositions.zipWithIndex.foldLeft(withData) { case (w, (pos, i)) =>
       if (((checks >> i) & 1) == 1) w.setBit(pos - 1) else w
     }
+    // SECDED: the overall parity bit on top makes the number of ones even
+    if (code.secded && hamming.bitCount % 2 == 1) hamming.setBit(code.hammingWidth) else hamming
   }
 
-  /** Returns the corrected data and whether a correction happened */
-  def decode(code: HammingCode, codeword: BigInt): (BigInt, Boolean) = {
-    val syndrome = setPositions(codeword, code.codeWidth).foldLeft(0)(_ ^ _)
-    val fixed = if (syndrome >= 1 && syndrome <= code.codeWidth) codeword.flipBit(syndrome - 1) else codeword
+  /** Decodes a code word, see [[DecodeResult]] */
+  def decode(code: HammingCode, codeword: BigInt): DecodeResult = {
+    // the overall parity bit of SECDED is not part of the Hamming syndrome
+    val syndrome = setPositions(codeword, code.hammingWidth).foldLeft(0)(_ ^ _)
+    // SECDED: a non-zero syndrome with even parity can only come from two flips,
+    // a syndrome outside the code word from even more. Do not touch the data then.
+    val oddParity = code.secded && codeword.bitCount % 2 == 1
+    val uncorrectable = code.secded && syndrome != 0 && (!oddParity || syndrome > code.hammingWidth)
+    val fixed =
+      if (!uncorrectable && syndrome >= 1 && syndrome <= code.hammingWidth) codeword.flipBit(syndrome - 1) else codeword
     val data = code.dataPositions.zipWithIndex.foldLeft(BigInt(0)) { case (d, (pos, i)) =>
       if (fixed.testBit(pos - 1)) d.setBit(i) else d
     }
-    (data, syndrome != 0)
+    // a zero syndrome with odd parity is a flip of the parity bit itself
+    DecodeResult(data, corrected = !uncorrectable && (syndrome != 0 || oddParity), uncorrectable = uncorrectable, syndrome = syndrome)
   }
 }
 
@@ -91,8 +109,9 @@ class HammingCodeTest extends AnyFlatSpec {
     val code = HammingCode(8)
     for (data <- 0 until 256; flip <- 0 until code.codeWidth) {
       val cw = HammingModel.encode(code, data)
-      assert(HammingModel.decode(code, cw) == (BigInt(data), false))
-      assert(HammingModel.decode(code, cw.flipBit(flip)) == (BigInt(data), true))
+      assert(HammingModel.decode(code, cw) == DecodeResult(data, corrected = false))
+      // the syndrome is the position of the flipped bit (positions start at 1)
+      assert(HammingModel.decode(code, cw.flipBit(flip)) == DecodeResult(data, corrected = true, syndrome = flip + 1))
     }
   }
 }

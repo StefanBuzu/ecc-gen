@@ -38,14 +38,14 @@ object HammingModel {
     }
   }
 
-  /** Returns the corrected data and whether a correction happened */
-  def decode(code: HammingCode, codeword: BigInt): (BigInt, Boolean) = {
+  /** Decodes a code word, see [[DecodeResult]] */
+  def decode(code: HammingCode, codeword: BigInt): DecodeResult = {
     val syndrome = setPositions(codeword, code.codeWidth).foldLeft(0)(_ ^ _)
     val fixed = if (syndrome >= 1 && syndrome <= code.codeWidth) codeword.flipBit(syndrome - 1) else codeword
     val data = code.dataPositions.zipWithIndex.foldLeft(BigInt(0)) { case (d, (pos, i)) =>
       if (fixed.testBit(pos - 1)) d.setBit(i) else d
     }
-    (data, syndrome != 0)
+    DecodeResult(data, corrected = syndrome != 0)
   }
 }
 
@@ -96,8 +96,8 @@ class HammingCodeTest extends AnyFlatSpec {
     val code = HammingCode(8)
     for (data <- 0 until 256; flip <- 0 until code.codeWidth) {
       val cw = HammingModel.encode(code, data)
-      assert(HammingModel.decode(code, cw) == (BigInt(data), false))
-      assert(HammingModel.decode(code, cw.flipBit(flip)) == (BigInt(data), true))
+      assert(HammingModel.decode(code, cw) == DecodeResult(data, corrected = false))
+      assert(HammingModel.decode(code, cw.flipBit(flip)) == DecodeResult(data, corrected = true))
     }
   }
 }

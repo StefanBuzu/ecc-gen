@@ -28,4 +28,12 @@ class SecdedModelTest extends AnyFlatSpec {
       }
     }
   }
+
+  it should "decode an undisturbed code word without flags" in {
+    val code = HammingCode(8, secded = true)
+    for (data <- 0 until 256) {
+      val res = HammingModel.decode(code, HammingModel.encode(code, data))
+      assert(res == DecodeResult(data, corrected = false, uncorrectable = false, syndrome = 0))
+    }
+  }
 }

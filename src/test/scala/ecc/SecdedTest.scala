@@ -61,4 +61,20 @@ class SecdedModelTest extends AnyFlatSpec {
       }
     }
   }
+
+  for (w <- widths) {
+    val code = HammingCode(w, secded = true)
+
+    it should s"fix every single bit flip and set corrected ($w data bits)" in {
+      for (data <- testData(w); bit <- 0 until code.codeWidth) {
+        val cw = HammingModel.encode(code, data)
+        val res = HammingModel.decode(code, cw.flipBit(bit))
+        val msg = s"data 0x${data.toString(16)}, bit $bit flipped"
+        assert(res.data == data, msg)
+        assert(res.corrected && !res.uncorrectable, msg)
+        // syndrome: position of the flipped bit, 0 for the extra parity bit (the MSB)
+        assert(res.syndrome == (if (bit == code.hammingWidth) 0 else bit + 1), msg)
+      }
+    }
+  }
 }

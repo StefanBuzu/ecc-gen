@@ -36,4 +36,11 @@ class SecdedModelTest extends AnyFlatSpec {
       assert(res == DecodeResult(data, corrected = false, uncorrectable = false, syndrome = 0))
     }
   }
+
+  it should "correct a flip of the overall parity bit and report syndrome 0" in {
+    val code = HammingCode(8, secded = true)
+    val cw = HammingModel.encode(code, 0xa5)
+    val res = HammingModel.decode(code, cw.flipBit(code.codeWidth - 1))
+    assert(res == DecodeResult(0xa5, corrected = true, uncorrectable = false, syndrome = 0))
+  }
 }

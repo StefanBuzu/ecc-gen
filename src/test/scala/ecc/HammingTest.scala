@@ -125,6 +125,20 @@ class HammingTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 
+  "SECDED encoder" should "add an even overall parity bit on top of the Hamming code" in {
+    for (w <- Seq(1, 4, 8, 32, 64)) {
+      val code = HammingCode(w, secded = true)
+      test(new HammingEncoder(code)) { dut =>
+        for (data <- testData(w)) {
+          dut.io.data.poke(data.U)
+          val hamming = HammingModel.encode(HammingCode(w), data)
+          val parity = if (hamming.bitCount % 2 == 1) BigInt(1) << code.hammingWidth else BigInt(0)
+          dut.io.codeword.expect((parity | hamming).U, s"encoding 0x${data.toString(16)} for $w bits")
+        }
+      }
+    }
+  }
+
   // the generator works for any width, so test a range of them, including
   // widths where the code is "perfect" (4, 11, 26, 57) and where it is not
   for (w <- Seq(1, 4, 8, 11, 16, 26, 32, 57, 64))

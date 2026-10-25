@@ -77,4 +77,18 @@ class SecdedModelTest extends AnyFlatSpec {
       }
     }
   }
+
+  for (w <- widths) {
+    val code = HammingCode(w, secded = true)
+
+    it should s"flag every double bit flip as uncorrectable ($w data bits)" in {
+      for (data <- testData(w); a <- 0 until code.codeWidth; b <- a + 1 until code.codeWidth) {
+        val cw = HammingModel.encode(code, data)
+        val res = HammingModel.decode(code, cw.flipBit(a).flipBit(b))
+        val msg = s"data 0x${data.toString(16)}, bits $a and $b flipped"
+        assert(res.uncorrectable, msg)
+        assert(!res.corrected, msg)
+      }
+    }
+  }
 }

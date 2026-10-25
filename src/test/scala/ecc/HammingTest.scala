@@ -12,6 +12,15 @@ import scala.util.Random
   * of all set bits in a code word is its syndrome. For encoding, the check bits
   * are chosen such that this XOR becomes zero.
   */
+/** Result of decoding a code word.
+  *
+  * @param data          the (corrected) data word
+  * @param corrected     exactly one bit was flipped and has been fixed
+  * @param uncorrectable two bits were flipped (SECDED only)
+  * @param syndrome      position of the flipped bit (0 = no error)
+  */
+case class DecodeResult(data: BigInt, corrected: Boolean, uncorrectable: Boolean = false, syndrome: Int = 0)
+
 object HammingModel {
 
   private def setPositions(word: BigInt, width: Int): Seq[Int] =

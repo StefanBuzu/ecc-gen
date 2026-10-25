@@ -68,6 +68,15 @@ class HammingCodeTest extends AnyFlatSpec {
     for ((k, n) <- known) assert(HammingCode(k).codeWidth == n, s"for $k data bits")
   }
 
+  it should "add one overall parity bit for SECDED" in {
+    val known = Seq(1 -> 4, 8 -> 13, 16 -> 22, 32 -> 39, 64 -> 72)
+    for ((k, n) <- known) {
+      val code = HammingCode(k, secded = true)
+      assert(code.codeWidth == n, s"for $k data bits")
+      assert(code.hammingWidth == HammingCode(k).codeWidth)
+    }
+  }
+
   it should "place check bits at powers of two" in {
     val code = HammingCode(4)
     assert(code.checkPositions == Seq(1, 2, 4))

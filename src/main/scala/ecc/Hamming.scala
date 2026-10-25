@@ -25,7 +25,7 @@ class HammingEncoder(val code: HammingCode) extends Module {
   }.toMap
 
   // position 1 ends up in bit 0
-  io.codeword := VecInit((1 to code.codeWidth).map(p => dataAt.getOrElse(p, checkAt(p)))).asUInt
+  io.codeword := VecInit((1 to code.hammingWidth).map(p => dataAt.getOrElse(p, checkAt(p)))).asUInt
 }
 
 /** Corrects a single flipped bit and extracts the data word.
@@ -48,7 +48,7 @@ class HammingDecoder(val code: HammingCode) extends Module {
 
   // one-hot mask of the bit to flip; a syndrome of 0 (or beyond the code word,
   // only possible with multi-bit errors) flips nothing
-  val flipMask = UIntToOH(syndrome, code.codeWidth + 1)(code.codeWidth, 1)
+  val flipMask = UIntToOH(syndrome, code.hammingWidth + 1)(code.hammingWidth, 1)
   val fixed = io.codeword ^ flipMask
 
   io.data := VecInit(code.dataPositions.map(p => fixed(p - 1))).asUInt

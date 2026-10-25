@@ -32,10 +32,12 @@ object HammingModel {
       if (data.testBit(i)) w.setBit(pos - 1) else w
     }
     // the check bits are the binary representation of the XOR of all data positions
-    val checks = setPositions(withData, code.codeWidth).foldLeft(0)(_ ^ _)
-    code.checkPositions.zipWithIndex.foldLeft(withData) { case (w, (pos, i)) =>
+    val checks = setPositions(withData, code.hammingWidth).foldLeft(0)(_ ^ _)
+    val hamming = code.checkPositions.zipWithIndex.foldLeft(withData) { case (w, (pos, i)) =>
       if (((checks >> i) & 1) == 1) w.setBit(pos - 1) else w
     }
+    // SECDED: the overall parity bit on top makes the number of ones even
+    if (code.secded && hamming.bitCount % 2 == 1) hamming.setBit(code.hammingWidth) else hamming
   }
 
   /** Decodes a code word, see [[DecodeResult]] */

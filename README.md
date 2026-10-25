@@ -51,7 +51,9 @@ so that every position plus "no error" has its own syndrome.
 
 Requirements: Java (JDK 17 or later) and [sbt](https://www.scala-sbt.org/).
 
-Generate Verilog for the given data widths (default 8, 32, 64) into `generated/`:
+Generate Verilog for the given data widths (default 8, 32, 64). For each width
+both the SEC and the SECDED variant are written, to `generated/sec/` and
+`generated/secded/`:
 
 ```
 sbt "run 8 16 32"

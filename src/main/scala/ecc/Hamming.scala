@@ -5,7 +5,8 @@ import chisel3.util._
 
 /** Adds the check bits to a data word.
   *
-  * Each check bit is the XOR (even parity) of the data bits it covers.
+  * Each check bit is the XOR (even parity) of the data bits it covers. For
+  * SECDED, the parity of the whole Hamming part is added as the MSB.
   */
 class HammingEncoder(val code: HammingCode) extends Module {
   override def desiredName = s"HammingEncoder${code.dataWidth}"
@@ -25,7 +26,10 @@ class HammingEncoder(val code: HammingCode) extends Module {
   }.toMap
 
   // position 1 ends up in bit 0
-  io.codeword := VecInit((1 to code.hammingWidth).map(p => dataAt.getOrElse(p, checkAt(p)))).asUInt
+  val hamming = VecInit((1 to code.hammingWidth).map(p => dataAt.getOrElse(p, checkAt(p)))).asUInt
+
+  // overall parity bit on top: makes the number of ones in the code word even
+  io.codeword := (if (code.secded) Cat(hamming.xorR, hamming) else hamming)
 }
 
 /** Corrects a single flipped bit and extracts the data word.

@@ -50,4 +50,15 @@ class SecdedModelTest extends AnyFlatSpec {
     val res = HammingModel.decode(code, cw.flipBit(2).flipBit(9))
     assert(res.uncorrectable && !res.corrected)
   }
+
+  for (w <- widths) {
+    val code = HammingCode(w, secded = true)
+
+    it should s"leave data unchanged and set no flags without an error ($w data bits)" in {
+      for (data <- testData(w)) {
+        val res = HammingModel.decode(code, HammingModel.encode(code, data))
+        assert(res == DecodeResult(data, corrected = false, uncorrectable = false, syndrome = 0), s"data 0x${data.toString(16)}")
+      }
+    }
+  }
 }

@@ -50,6 +50,8 @@ class HammingHarness(code: HammingCode) extends Module {
     val codeword = Output(UInt(code.codeWidth.W)) // encoder output
     val decoded = Output(UInt(code.dataWidth.W))
     val corrected = Output(Bool())
+    val uncorrectable = Output(Bool())
+    val syndrome = Output(UInt(code.checkWidth.W))
   })
   val enc = Module(new HammingEncoder(code))
   val dec = Module(new HammingDecoder(code))
@@ -58,6 +60,8 @@ class HammingHarness(code: HammingCode) extends Module {
   dec.io.codeword := enc.io.codeword ^ io.errorMask
   io.decoded := dec.io.data
   io.corrected := dec.io.corrected
+  io.uncorrectable := dec.io.uncorrectable
+  io.syndrome := dec.io.syndrome
 }
 
 class HammingCodeTest extends AnyFlatSpec {
@@ -114,12 +118,16 @@ class HammingTest extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.codeword.expect(expected.U, s"encoding 0x${data.toString(16)}")
         dut.io.decoded.expect(data.U)
         dut.io.corrected.expect(false.B)
+        dut.io.uncorrectable.expect(false.B)
+        dut.io.syndrome.expect(0.U)
 
-        // every single bit flip gets corrected
+        // every single bit flip gets corrected, the syndrome is its position
         for (bit <- 0 until code.codeWidth) {
           dut.io.errorMask.poke((BigInt(1) << bit).U)
           dut.io.decoded.expect(data.U, s"data 0x${data.toString(16)} with bit $bit flipped")
           dut.io.corrected.expect(true.B)
+          dut.io.uncorrectable.expect(false.B)
+          dut.io.syndrome.expect((bit + 1).U)
         }
       }
     }
@@ -134,6 +142,29 @@ class HammingTest extends AnyFlatSpec with ChiselScalatestTester {
           val hamming = HammingModel.encode(HammingCode(w), data)
           val parity = if (hamming.bitCount % 2 == 1) BigInt(1) << code.hammingWidth else BigInt(0)
           dut.io.codeword.expect((parity | hamming).U, s"encoding 0x${data.toString(16)} for $w bits")
+        }
+      }
+    }
+  }
+
+  "SECDED decoder" should "correct single and detect double bit errors" in {
+    val code = HammingCode(8, secded = true)
+    test(new HammingHarness(code)) { dut =>
+      for (data <- Seq(0x00, 0xff, 0xa5, 0x3c)) {
+        dut.io.data.poke(data.U)
+        for (i <- 0 until code.codeWidth) {
+          // single flip, including the parity bit on top (syndrome 0)
+          dut.io.errorMask.poke((BigInt(1) << i).U)
+          dut.io.decoded.expect(data.U, s"data 0x${data.toHexString} with bit $i flipped")
+          dut.io.corrected.expect(true.B)
+          dut.io.uncorrectable.expect(false.B)
+          dut.io.syndrome.expect((if (i == code.hammingWidth) 0 else i + 1).U)
+          // every double flip is reported, never "corrected"
+          for (j <- i + 1 until code.codeWidth) {
+            dut.io.errorMask.poke(((BigInt(1) << i) | (BigInt(1) << j)).U)
+            dut.io.corrected.expect(false.B, s"bits $i and $j flipped")
+            dut.io.uncorrectable.expect(true.B, s"bits $i and $j flipped")
+          }
         }
       }
     }

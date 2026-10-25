@@ -16,14 +16,15 @@ course (02201) at DTU.
 
 ## Status
 
-**MVP**: Hamming single error correction (SEC) for any data width.
+- **Sprint 1 (MVP)**: Hamming single error correction (SEC) for any data width.
+- **Sprint 2**: SECDED (also detects double bit errors) and error outputs.
 
-| Data bits | Check bits | Code word |
-|-----------|------------|-----------|
-| 8         | 4          | 12        |
-| 16        | 5          | 21        |
-| 32        | 6          | 38        |
-| 64        | 7          | 71        |
+| Data bits | Check bits | SEC code word | SECDED code word |
+|-----------|------------|---------------|------------------|
+| 8         | 4          | 12            | 13               |
+| 16        | 5          | 21            | 22               |
+| 32        | 6          | 38            | 39               |
+| 64        | 7          | 71            | 72               |
 
 See [BACKLOG.md](BACKLOG.md) for planned features.
 
@@ -47,6 +48,38 @@ number, the **syndrome**, which is exactly the position of the flipped bit
 The number of check bits `r` is the smallest value with `2^r >= data bits + r + 1`,
 so that every position plus "no error" has its own syndrome.
 
+## SECDED: detecting double errors
+
+The plain Hamming code (SEC) can only handle one flipped bit. If two bits flip,
+the syndrome points to a third, innocent bit, and the decoder "corrects" it into
+wrong data without noticing.
+
+SECDED (single error correction, double error detection) fixes this with one
+extra **overall parity bit** `P`, stored as the most significant bit. `P` is the
+XOR of all other bits, so a valid code word always has an even number of ones.
+Each flipped bit changes this even/odd count:
+
+- **one** flipped bit: the count is odd, and the syndrome says where the error is
+  (syndrome 0 means only `P` itself flipped) → corrected
+- **two** flipped bits: the count is even again, but the syndrome is not zero →
+  reported as uncorrectable, the data is not touched
+
+![SECDED code word and decoder decision](docs/secded.svg)
+
+This is the code used in ECC RAM: 64 data bits are stored as 72 bits.
+
+### Decoder outputs
+
+| Output | Meaning |
+|--------|---------|
+| `data` | the data word, with a single bit error fixed |
+| `corrected` | one bit was flipped and has been fixed |
+| `uncorrectable` | an error was detected that cannot be fixed, `data` is wrong (two flipped bits with SECDED) |
+| `syndrome` | position of the flipped bit; 0 for no error or when only the parity bit `P` flipped |
+
+Without SECDED, `uncorrectable` is only set when the syndrome points beyond the
+code word, which is a rare case of a multi-bit error.
+
 ## Usage
 
 Requirements: Java (JDK 17 or later) and [sbt](https://www.scala-sbt.org/).
@@ -68,9 +101,12 @@ Use the generator in Chisel:
 ```scala
 import ecc._
 
-val code = HammingCode(32)                // layout for 32 data bits
+val code = HammingCode(32)                 // SEC layout for 32 data bits (38 bit code word)
+val code2 = HammingCode(64, secded = true) // SECDED layout for 64 data bits (72 bit code word)
+
 val enc = Module(new HammingEncoder(code)) // io.data -> io.codeword
-val dec = Module(new HammingDecoder(code)) // io.codeword -> io.data, io.corrected
+val dec = Module(new HammingDecoder(code)) // io.codeword -> io.data, io.corrected,
+                                           //   io.uncorrectable, io.syndrome
 ```
 
 ## Structure
@@ -91,7 +127,11 @@ hardware that implements it (`HammingEncoder`, `HammingDecoder`).
   tests compare two independent implementations.
 - For each tested width (1, 4, 8, 11, 16, 26, 32, 57, 64), the encoder output
   is compared with the model, and **every single bit flip** of the code word is
-  checked to be corrected. Widths up to 8 bits are tested exhaustively.
+  checked to be corrected, with the syndrome pointing to the flipped bit. Widths
+  up to 8 bits are tested exhaustively.
+- For SECDED, the encoder is checked to add the correct parity bit, and the
+  decoder is checked to correct every single flip and to report **every pair of
+  flipped bits** as uncorrectable.
 - Tests run automatically on every push with GitHub Actions
   ([ci.yml](.github/workflows/ci.yml)).
 

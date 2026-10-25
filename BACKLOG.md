@@ -41,8 +41,8 @@ every feature is checked by someone who did not write it.
 - [x] 1 SECDED layout: `secded` parameter in `HammingCode`, extra overall parity bit as MSB (S).
   Done when the code width is 13 for 8 data bits and 72 for 64 data bits.
 - [x] 2 SECDED encoder: add the overall parity bit (S)
-- [ ] 3 Decoder error outputs: `corrected`, `uncorrectable`, `syndrome` (error position) (M)
-- [ ] 4 README: explain SECDED and the decoder outputs, add a figure (SVG) (M)
+- [x] 3 Decoder error outputs: `corrected`, `uncorrectable`, `syndrome` (error position) (M)
+- [x] 4 README: explain SECDED and the decoder outputs, add a figure (SVG) (M)
 
 **Igor** (tests):
 - [ ] 5 Reference model: SECDED encode and decode in the test model (M)

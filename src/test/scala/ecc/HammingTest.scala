@@ -97,7 +97,8 @@ class HammingCodeTest extends AnyFlatSpec {
     for (data <- 0 until 256; flip <- 0 until code.codeWidth) {
       val cw = HammingModel.encode(code, data)
       assert(HammingModel.decode(code, cw) == DecodeResult(data, corrected = false))
-      assert(HammingModel.decode(code, cw.flipBit(flip)) == DecodeResult(data, corrected = true))
+      // the syndrome is the position of the flipped bit (positions start at 1)
+      assert(HammingModel.decode(code, cw.flipBit(flip)) == DecodeResult(data, corrected = true, syndrome = flip + 1))
     }
   }
 }

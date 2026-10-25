@@ -42,8 +42,9 @@ object HammingModel {
 
   /** Decodes a code word, see [[DecodeResult]] */
   def decode(code: HammingCode, codeword: BigInt): DecodeResult = {
-    val syndrome = setPositions(codeword, code.codeWidth).foldLeft(0)(_ ^ _)
-    val fixed = if (syndrome >= 1 && syndrome <= code.codeWidth) codeword.flipBit(syndrome - 1) else codeword
+    // the overall parity bit of SECDED is not part of the Hamming syndrome
+    val syndrome = setPositions(codeword, code.hammingWidth).foldLeft(0)(_ ^ _)
+    val fixed = if (syndrome >= 1 && syndrome <= code.hammingWidth) codeword.flipBit(syndrome - 1) else codeword
     val data = code.dataPositions.zipWithIndex.foldLeft(BigInt(0)) { case (d, (pos, i)) =>
       if (fixed.testBit(pos - 1)) d.setBit(i) else d
     }

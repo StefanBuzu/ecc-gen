@@ -45,7 +45,7 @@ object HammingModel {
     val data = code.dataPositions.zipWithIndex.foldLeft(BigInt(0)) { case (d, (pos, i)) =>
       if (fixed.testBit(pos - 1)) d.setBit(i) else d
     }
-    DecodeResult(data, corrected = syndrome != 0)
+    DecodeResult(data, corrected = syndrome != 0, syndrome = syndrome)
   }
 }
 

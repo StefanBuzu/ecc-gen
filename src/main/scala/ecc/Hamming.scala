@@ -55,13 +55,19 @@ class HammingDecoder(val code: HammingCode) extends Module {
   io.corrected := syndrome =/= 0.U
 }
 
-/** Generate Verilog for the given data widths, e.g. `sbt "run 8 32 64"` */
+/** Generate Verilog for the given data widths, e.g. `sbt "run 8 32 64"`.
+  *
+  * Every width is generated twice: the SEC variant into `generated/sec` and the
+  * SECDED variant into `generated/secded`. The module names are the same, so the
+  * variants get their own directory.
+  */
 object HammingGen extends App {
   val widths = if (args.nonEmpty) args.map(_.toInt).toSeq else Seq(8, 32, 64)
-  for (w <- widths) {
-    val code = HammingCode(w)
-    println(s"$code: ${code.checkWidth} check bits")
-    emitVerilog(new HammingEncoder(code), Array("--target-dir", "generated"))
-    emitVerilog(new HammingDecoder(code), Array("--target-dir", "generated"))
+  for (w <- widths; secded <- Seq(false, true)) {
+    val code = HammingCode(w, secded)
+    val dir = s"generated/${if (secded) "secded" else "sec"}"
+    println(s"$code: ${code.checkWidth} check bits, writing to $dir")
+    emitVerilog(new HammingEncoder(code), Array("--target-dir", dir))
+    emitVerilog(new HammingDecoder(code), Array("--target-dir", dir))
   }
 }

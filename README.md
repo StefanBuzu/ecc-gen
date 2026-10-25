@@ -139,14 +139,18 @@ hardware that implements it (`HammingEncoder`, `HammingDecoder`).
 
 ## Team
 
-- Name (student number)
-- Name (student number)
+- Stefan Buzu, s260383 ([StefanBuzu](https://github.com/StefanBuzu))
+- Igor Cretu ([igorcretu](https://github.com/igorcretu))
+
+The development process (Scrum, sprints, tasks per person) is documented in
+[BACKLOG.md](BACKLOG.md).
 
 ## Use of AI
 
-We used Claude (an AI assistant) to help set up the project and implement the
-MVP (generator, reference model and tests). We reviewed the code, ran the
-tests, and made sure we understand how it works.
+We used Claude (an AI assistant) to help set up the project, implement the MVP
+(generator, reference model and tests), implement the SECDED hardware in
+sprint 2, write documentation, and review pull requests. We reviewed the code,
+ran the tests, and made sure we understand how it works.
 
 ## License
 

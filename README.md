@@ -126,8 +126,28 @@ val dec = Module(new HammingDecoderDecoupled(code)) // in: code word, out: Decod
 enc.io.out <> dec.io.in   // chain them, the handshake is connected too
 ```
 
-The wrappers are combinational for now: they never hold a word back, so
+By default the wrappers are combinational: they never hold a word back, so
 `in.ready` follows `out.ready` and `out.valid` follows `in.valid`.
+
+### Pipeline option
+
+`HammingDecoderDecoupled(code, pipeline = true)` adds a register stage after the
+decoder:
+
+```scala
+val dec = Module(new HammingDecoderDecoupled(code, pipeline = true))
+```
+
+- The result appears **one clock cycle later**.
+- The XOR trees of the decoder end at a register, so whatever comes after it
+  starts from a register instead of from the decoder logic. This shortens the
+  longest path and allows a faster clock, at the cost of the extra cycle and
+  about `dataWidth + checkWidth + 3` flip-flops (the decoded word plus a flag
+  that says whether the register is full).
+- The register **holds its word while `out.ready` is low** and then stops the
+  sender with `in.ready = 0`. No word is lost or repeated.
+- A new word can enter in the same cycle in which the old one leaves, so with a
+  ready receiver the decoder still accepts **one word per cycle**.
 
 ## Structure
 

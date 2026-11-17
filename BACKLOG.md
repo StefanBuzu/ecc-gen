@@ -64,7 +64,7 @@ through a pull request into `main`, and CI must pass before merging.
 ## Sprint 3 (about weeks 10–11): interfaces and memory, intermediate presentation
 
 **Stefan:**
-- [ ] 9 Ready/valid interface: `DecoupledIO` versions of the encoder and decoder (M)
+- [x] 9 Ready/valid interface: `DecoupledIO` versions of the encoder and decoder (M)
 - [ ] 10 Pipeline option: parameter to add a register stage in the decoder (M)
 - [ ] 11 Tests for Igor's ECC memory (12, 13): write, inject 1 or 2 errors, read, check data and error flags (M)
 - [ ] 11b README: SECDED gives no guarantee for 3 or more flipped bits; `syndrome` is only meaningful when `corrected` is set (S, from the #4 review)

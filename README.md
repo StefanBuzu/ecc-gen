@@ -111,12 +111,31 @@ val dec = Module(new HammingDecoder(code)) // io.codeword -> io.data, io.correct
                                            //   io.uncorrectable, io.syndrome
 ```
 
+### Ready/valid interface
+
+`HammingEncoderDecoupled` and `HammingDecoderDecoupled` wrap the modules above
+with `DecoupledIO` ports (`io.in` and `io.out`). A word moves when `valid` and
+`ready` are both high: the sender raises `valid` when it has data, the receiver
+raises `ready` when it can take it. The decoder output is a `DecodedWord` bundle
+with `data`, `corrected`, `uncorrectable` and `syndrome`.
+
+```scala
+val enc = Module(new HammingEncoderDecoupled(code)) // in: data, out: code word
+val dec = Module(new HammingDecoderDecoupled(code)) // in: code word, out: DecodedWord
+
+enc.io.out <> dec.io.in   // chain them, the handshake is connected too
+```
+
+The wrappers are combinational for now: they never hold a word back, so
+`in.ready` follows `out.ready` and `out.valid` follows `in.valid`.
+
 ## Structure
 
 | File | Content |
 |------|---------|
 | [HammingCode.scala](src/main/scala/ecc/HammingCode.scala) | Code layout (plain Scala): number of check bits, bit positions |
 | [Hamming.scala](src/main/scala/ecc/Hamming.scala) | Chisel encoder and decoder generated from the layout, Verilog emitter |
+| [HammingDecoupled.scala](src/main/scala/ecc/HammingDecoupled.scala) | Ready/valid (`DecoupledIO`) wrappers for the encoder and decoder |
 | [HammingTest.scala](src/test/scala/ecc/HammingTest.scala) | Reference model and tests |
 
 The generator separates *what* the code looks like (`HammingCode`) from the

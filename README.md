@@ -75,10 +75,32 @@ This is the code used in ECC RAM: 64 data bits are stored as 72 bits.
 | `data` | the data word, with a single bit error fixed |
 | `corrected` | one bit was flipped and has been fixed |
 | `uncorrectable` | an error was detected that cannot be fixed, `data` is wrong (two flipped bits with SECDED) |
-| `syndrome` | position of the flipped bit; 0 for no error or when only the parity bit `P` flipped |
+| `syndrome` | position of the flipped bit, **only meaningful when `corrected` is set**; 0 for no error or when only the parity bit `P` flipped |
+
+When `uncorrectable` is set, `syndrome` is just the raw result of the checks. It
+is not the position of any flipped bit, so do not use it to locate an error then.
 
 Without SECDED, `uncorrectable` is only set when the syndrome points beyond the
 code word, which is a rare case of a multi-bit error.
+
+### What is guaranteed
+
+Per code word:
+
+| Flipped bits | SEC | SECDED |
+|--------------|-----|--------|
+| 0 | no flags | no flags |
+| 1 | fixed, `corrected` | fixed, `corrected` |
+| 2 | **usually not detected**: the wrong bit is "fixed", `corrected` is set, `data` is wrong | **detected**: `uncorrectable`, `data` is not touched |
+| 3 or more | no guarantee | no guarantee |
+
+With **three or more** flipped bits neither variant can be trusted. Depending on
+which bits flipped, the decoder may report `corrected` while `data` is wrong
+(the checks look like a single error), report `uncorrectable`, or, with SECDED
+and an even number of flips whose checks cancel out, report nothing at all.
+Such errors are much rarer than single flips, and a stronger code is needed to
+handle them. If silently wrong data is not acceptable, use SECDED and treat
+`uncorrectable` as "do not use this word".
 
 ## Usage
 

@@ -35,9 +35,15 @@ class HammingEncoderDecoupled(val code: HammingCode) extends Module {
 
 /** [[HammingDecoder]] with ready/valid (DecoupledIO) interfaces, see
   * [[HammingEncoderDecoupled]].
+  *
+  * With `pipeline`, a register stage is added after the decoder. The result
+  * appears one clock cycle later, but the logic behind the register starts from a
+  * register instead of from the decoder's XOR trees, which allows a faster clock.
+  * The register holds its word while the receiver is not ready, and a new word can
+  * still enter every cycle (full throughput), so no word is lost or duplicated.
   */
-class HammingDecoderDecoupled(val code: HammingCode) extends Module {
-  override def desiredName = s"HammingDecoder${code.dataWidth}Decoupled"
+class HammingDecoderDecoupled(val code: HammingCode, val pipeline: Boolean = false) extends Module {
+  override def desiredName = s"HammingDecoder${code.dataWidth}Decoupled${if (pipeline) "Pipe" else ""}"
 
   val io = IO(new Bundle {
     val in = Flipped(Decoupled(UInt(code.codeWidth.W)))
@@ -47,10 +53,15 @@ class HammingDecoderDecoupled(val code: HammingCode) extends Module {
   val dec = Module(new HammingDecoder(code))
   dec.io.codeword := io.in.bits
 
-  io.out.bits.data := dec.io.data
-  io.out.bits.corrected := dec.io.corrected
-  io.out.bits.uncorrectable := dec.io.uncorrectable
-  io.out.bits.syndrome := dec.io.syndrome
-  io.out.valid := io.in.valid
-  io.in.ready := io.out.ready
+  val decoded = Wire(Decoupled(new DecodedWord(code)))
+  decoded.bits.data := dec.io.data
+  decoded.bits.corrected := dec.io.corrected
+  decoded.bits.uncorrectable := dec.io.uncorrectable
+  decoded.bits.syndrome := dec.io.syndrome
+  decoded.valid := io.in.valid
+  io.in.ready := decoded.ready
+
+  // pipe = true: the register accepts a new word in the same cycle as it hands
+  // its word on, so a stage does not halve the throughput
+  io.out <> (if (pipeline) Queue(decoded, entries = 1, pipe = true) else decoded)
 }

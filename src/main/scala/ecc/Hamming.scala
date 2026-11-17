@@ -49,7 +49,7 @@ class HammingDecoder(val code: HammingCode) extends Module {
     val data = Output(UInt(code.dataWidth.W))
     val corrected = Output(Bool()) // a single bit was flipped and has been fixed
     val uncorrectable = Output(Bool()) // an error was detected that cannot be fixed, data is wrong
-    val syndrome = Output(UInt(code.checkWidth.W)) // position of the flipped bit (0: none or the parity bit)
+    val syndrome = Output(UInt(code.checkWidth.W)) // position of the flipped bit, only meaningful when corrected is set (0: none or the parity bit)
   })
 
   private def bitAt(pos: Int): Bool = io.codeword(pos - 1)

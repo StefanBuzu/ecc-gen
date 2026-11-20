@@ -39,5 +39,12 @@ class EccMemory(val depth: Int, val dataWidth: Int, val secded: Boolean = false)
     mem.write(io.wrAddr, enc.io.codeword)
   }
 
-  io.rdData := DontCare
+  // read: the stored code word goes through the decoder. The read is
+  // combinational, the result is there in the same cycle as the address.
+  val dec = Module(new HammingDecoder(code))
+  dec.io.codeword := mem.read(io.rdAddr)
+  io.rdData.data := dec.io.data
+  io.rdData.corrected := dec.io.corrected
+  io.rdData.uncorrectable := dec.io.uncorrectable
+  io.rdData.syndrome := dec.io.syndrome
 }

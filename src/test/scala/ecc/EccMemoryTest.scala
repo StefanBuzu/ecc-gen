@@ -62,4 +62,14 @@ class EccMemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       expectClean(dut, 2, 0x5a)
     }
   }
+
+  it should "work for narrow and wide words and for a depth that is not a power of two" in {
+    for (secded <- Seq(false, true); (depth, width) <- Seq((1, 4), (5, 1), (3, 64))) {
+      test(new EccMemory(depth, width, secded)) { dut =>
+        val words = Seq.fill(depth)(BigInt(width, rnd))
+        for ((w, a) <- words.zipWithIndex) write(dut, a, w)
+        for ((w, a) <- words.zipWithIndex) expectClean(dut, a, w)
+      }
+    }
+  }
 }

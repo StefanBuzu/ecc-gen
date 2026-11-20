@@ -32,5 +32,12 @@ class EccMemory(val depth: Int, val dataWidth: Int, val secded: Boolean = false)
   // every stored word is a complete code word, `codeWidth` bits wide
   val mem = Mem(depth, UInt(code.codeWidth.W))
 
+  // write: the encoder adds the check bits, the word is stored as a code word
+  val enc = Module(new HammingEncoder(code))
+  enc.io.data := io.wrData
+  when(io.wrEn) {
+    mem.write(io.wrAddr, enc.io.codeword)
+  }
+
   io.rdData := DontCare
 }

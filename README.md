@@ -186,6 +186,8 @@ measurement they are placed between two register stages (`EncoderSynth`,
 | 64 | encoder | 77 | 88 | +14 % | 206 | 163 | 60 | 59 |
 | 64 | decoder | 161 | 192 | +19 % | 117 | 118 | 139 | 151 |
 
+![Hardware used and speed, SEC vs SECDED](docs/resources.svg)
+
 What the numbers say:
 
 - The **decoder is two to four times as big as the encoder**: it computes the
@@ -206,6 +208,7 @@ To measure it yourself (needs `pip install yowasp-yosys yowasp-nextpnr-ice40`):
 ```
 sbt "runMain ecc.SynthGen"     # Verilog for SEC and SECDED to generated/synth
 python scripts/synth.py        # writes results/resources.csv and prints this table
+python scripts/chart.py        # draws docs/resources.svg from the csv file
 ```
 
 ## Testing

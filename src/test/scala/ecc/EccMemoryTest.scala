@@ -16,6 +16,15 @@ object EccMemoryDriver {
     dut.io.wrEn.poke(false.B)
   }
 
+  /** Flips the bits of `mask` in the stored code word at `addr` (bit 0 = LSB of the code word) */
+  def inject(dut: EccMemory, addr: Int, mask: BigInt): Unit = {
+    dut.io.injectEn.poke(true.B)
+    dut.io.injectAddr.poke(addr.U)
+    dut.io.injectMask.poke(mask.U)
+    dut.clock.step()
+    dut.io.injectEn.poke(false.B)
+  }
+
   /** Reads a word and checks that it comes back as written, without any flag */
   def expectClean(dut: EccMemory, addr: Int, data: BigInt): Unit = {
     dut.io.rdAddr.poke(addr.U)

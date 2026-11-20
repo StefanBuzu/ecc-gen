@@ -38,3 +38,19 @@ class DecoderSynth(val code: HammingCode) extends Module {
   io.out.uncorrectable := RegNext(dec.io.uncorrectable)
   io.out.syndrome := RegNext(dec.io.syndrome)
 }
+
+/** Generate the synthesis modules, e.g. `sbt "runMain ecc.SynthGen 8 16 32 64"`.
+  *
+  * SEC goes to `generated/synth/sec` and SECDED to `generated/synth/secded`. Then
+  * `python scripts/synth.py` measures them.
+  */
+object SynthGen extends App {
+  val widths = if (args.nonEmpty) args.map(_.toInt).toSeq else Seq(8, 16, 32, 64)
+  for (w <- widths; secded <- Seq(false, true)) {
+    val code = HammingCode(w, secded)
+    val dir = s"generated/synth/${if (secded) "secded" else "sec"}"
+    println(s"$code -> $dir")
+    emitVerilog(new EncoderSynth(code), Array("--target-dir", dir))
+    emitVerilog(new DecoderSynth(code), Array("--target-dir", dir))
+  }
+}

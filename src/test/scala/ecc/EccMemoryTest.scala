@@ -43,4 +43,23 @@ class EccMemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  "EccMemory" should "update a word on overwrite and leave the other words alone" in {
+    test(new EccMemory(8, 8, secded = true)) { dut =>
+      for (a <- 0 until 8) write(dut, a, a * 3)
+      write(dut, 5, 0xc3)
+      for (a <- 0 until 8) expectClean(dut, a, if (a == 5) 0xc3 else a * 3)
+    }
+  }
+
+  it should "not change the memory while the write enable is low" in {
+    test(new EccMemory(4, 8)) { dut =>
+      write(dut, 2, 0x5a)
+      dut.io.wrAddr.poke(2.U)
+      dut.io.wrData.poke(0xff.U)
+      dut.io.wrEn.poke(false.B)
+      dut.clock.step(3)
+      expectClean(dut, 2, 0x5a)
+    }
+  }
 }

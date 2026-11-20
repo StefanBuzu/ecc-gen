@@ -34,6 +34,7 @@ object StallDriver {
     var received = 0 // words taken from the module
     var holding = false // the sender has offered the current word and must keep it
     var cycles = 0
+    var stalledWord: Option[Seq[BigInt]] = None // output that was valid but not taken in the last cycle
 
     while (received < items) {
       assert(cycles < items * 100, s"stuck after $cycles cycles: $sent sent, $received received")
@@ -48,7 +49,15 @@ object StallDriver {
 
       // the outputs have settled after the pokes
       val accepted = offering && in.ready.peekBoolean()
-      val taken = out.valid.peekBoolean() && receiverReady
+      val outValid = out.valid.peekBoolean()
+      val taken = outValid && receiverReady
+
+      // a word that was not taken has to stay, unchanged, until the receiver takes it
+      for (previous <- stalledWord) {
+        assert(outValid, s"the word was dropped without being taken (cycle $cycles, $stalls)")
+        assert(outValues() == previous, s"the word changed while it was waiting (cycle $cycles, $stalls)")
+      }
+      stalledWord = if (outValid && !receiverReady) Some(outValues()) else None
 
       if (taken) {
         assert(outValues() == expected(received), s"word $received is wrong (cycle $cycles, $stalls)")

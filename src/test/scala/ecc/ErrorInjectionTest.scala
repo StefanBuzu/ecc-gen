@@ -51,4 +51,25 @@ class ErrorInjectionTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  "EccMemory" should "only change the chosen word" in {
+    test(new EccMemory(8, 8, secded = true)) { dut =>
+      for (a <- 0 until 8) write(dut, a, 0x10 + a)
+      inject(dut, 3, 0x0004)
+
+      for (a <- 0 until 8) {
+        dut.io.rdAddr.poke(a.U)
+        dut.io.rdData.data.expect((0x10 + a).U)
+        dut.io.rdData.corrected.expect((a == 3).B, s"address $a")
+      }
+    }
+  }
+
+  it should "not change anything with an all-zero mask" in {
+    test(new EccMemory(4, 8, secded = true)) { dut =>
+      write(dut, 2, 0x77)
+      inject(dut, 2, 0)
+      expectClean(dut, 2, 0x77)
+    }
+  }
 }

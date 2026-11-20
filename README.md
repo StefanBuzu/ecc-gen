@@ -188,11 +188,12 @@ measurement they are placed between two register stages (`EncoderSynth`,
 
 What the numbers say:
 
-- The **decoder is two to three times as big as the encoder**: it computes the
+- The **decoder is two to four times as big as the encoder**: it computes the
   syndrome, decodes it into a one-hot mask and flips the bit.
 - The logic grows about **linearly with the data width** (the XOR trees), and the
-  maximum clock frequency falls from about 235 MHz at 8 bits to about 117 MHz at
-  64 bits, because the XOR trees get deeper.
+  maximum clock frequency falls with it: the SEC decoder runs at about 235 MHz
+  with 8 data bits and about 117 MHz with 64 (the encoder from 364 to 206 MHz),
+  because the XOR trees get deeper.
 - **SECDED costs extra**: the decoder needs about 7 to 29 % more LUT4 and the
   encoder 12 to 54 % more, for the overall parity bit and the extra decision.
   The encoder numbers are small, so a single LUT makes a large percentage.

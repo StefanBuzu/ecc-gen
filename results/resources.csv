@@ -1,0 +1,17 @@
+width,variant,module,ice40_lut4,ice40_ff,ice40_fmax_mhz,xc7_lut
+8,SEC,encoder,6,20,364.4,4
+8,SEC,decoder,26,26,235.0,26
+8,SECDED,encoder,9,21,288.6,7
+8,SECDED,decoder,32,27,225.7,25
+16,SEC,encoder,13,37,390.3,10
+16,SEC,decoder,46,44,181.3,28
+16,SECDED,encoder,20,38,227.8,16
+16,SECDED,decoder,49,45,185.3,48
+32,SEC,encoder,32,70,292.7,24
+32,SEC,decoder,80,78,145.9,68
+32,SECDED,encoder,36,71,224.6,28
+32,SECDED,decoder,103,79,120.3,94
+64,SEC,encoder,77,135,205.8,60
+64,SEC,decoder,161,144,117.2,139
+64,SECDED,encoder,88,136,163.3,59
+64,SECDED,decoder,192,145,117.6,151

@@ -10,3 +10,7 @@ val chiselVersion = "6.7.0"
 addCompilerPlugin("org.chipsalliance" % "chisel-plugin" % chiselVersion cross CrossVersion.full)
 libraryDependencies += "org.chipsalliance" %% "chisel" % chiselVersion
 libraryDependencies += "edu.berkeley.cs" %% "chiseltest" % "6.0.0" % Test
+
+// `sbt run` generates the encoders and decoders; other generators are started
+// with `sbt "runMain ecc.EccMemoryGen"`
+Compile / mainClass := Some("ecc.HammingGen")

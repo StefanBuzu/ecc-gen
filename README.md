@@ -161,6 +161,52 @@ val dec = Module(new HammingDecoderDecoupled(code, pipeline = true))
 The generator separates *what* the code looks like (`HammingCode`) from the
 hardware that implements it (`HammingEncoder`, `HammingDecoder`).
 
+## Results: hardware used and speed
+
+How much logic do the encoder and decoder need, and how fast can they run? The
+generated Verilog was synthesized with the open source tools Yosys and
+nextpnr, no board is needed:
+
+- **LUT4**: number of 4-input look-up tables on a Lattice iCE40 (Yosys `synth_ice40`)
+- **LUT6**: number of look-up tables with up to 6 inputs on a Xilinx 7 series (Yosys `synth_xilinx`)
+- **Fmax**: maximum clock frequency after place and route on an iCE40 HX8K (nextpnr)
+
+The encoder and the decoder are purely combinational, so for the speed
+measurement they are placed between two register stages (`EncoderSynth`,
+`DecoderSynth`), and Fmax is the longest register-to-register path.
+
+| Data bits | Module | LUT4 SEC | LUT4 SECDED | LUT4 extra | Fmax SEC (MHz) | Fmax SECDED (MHz) | LUT6 SEC | LUT6 SECDED |
+|---|---|---|---|---|---|---|---|---|
+| 8 | encoder | 6 | 9 | +50 % | 364 | 289 | 4 | 7 |
+| 8 | decoder | 26 | 32 | +23 % | 235 | 226 | 26 | 25 |
+| 16 | encoder | 13 | 20 | +54 % | 390 | 228 | 10 | 16 |
+| 16 | decoder | 46 | 49 | +7 % | 181 | 185 | 28 | 48 |
+| 32 | encoder | 32 | 36 | +12 % | 293 | 225 | 24 | 28 |
+| 32 | decoder | 80 | 103 | +29 % | 146 | 120 | 68 | 94 |
+| 64 | encoder | 77 | 88 | +14 % | 206 | 163 | 60 | 59 |
+| 64 | decoder | 161 | 192 | +19 % | 117 | 118 | 139 | 151 |
+
+What the numbers say:
+
+- The **decoder is two to three times as big as the encoder**: it computes the
+  syndrome, decodes it into a one-hot mask and flips the bit.
+- The logic grows about **linearly with the data width** (the XOR trees), and the
+  maximum clock frequency falls from about 235 MHz at 8 bits to about 117 MHz at
+  64 bits, because the XOR trees get deeper.
+- **SECDED costs extra**: the decoder needs about 7 to 29 % more LUT4 and the
+  encoder 12 to 54 % more, for the overall parity bit and the extra decision.
+  The encoder numbers are small, so a single LUT makes a large percentage.
+- Treat differences of 10 to 15 % with care. Each value is **one place-and-route run
+  with one seed** and unconstrained pins, so the placement adds noise (for
+  example, the 8-bit SECDED decoder needs one LUT6 less than the SEC one).
+
+To measure it yourself (needs `pip install yowasp-yosys yowasp-nextpnr-ice40`):
+
+```
+sbt "runMain ecc.SynthGen"     # Verilog for SEC and SECDED to generated/synth
+python scripts/synth.py        # writes results/resources.csv and prints this table
+```
+
 ## Testing
 
 - A software **reference model** computes the code in a different way than the

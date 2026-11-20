@@ -128,4 +128,18 @@ class StallTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  for (secded <- Seq(false, true); stalls <- patterns) {
+    val code = HammingCode(8, secded)
+
+    s"HammingDecoderDecoupled with pipeline ($code, $stalls)" should "not lose or repeat words and decode like the model" in {
+      val words = damagedWords(code, items, seed = 5)
+      test(new HammingDecoderDecoupled(code, pipeline = true)) { dut =>
+        runWithStalls(dut.clock, dut.io.in, dut.io.out, items, stalls, seed = 6)(i => dut.io.in.bits.poke(words(i)._2.U))(
+          () => decodedValues(dut.io.out.bits),
+          i => modelValues(HammingModel.decode(code, words(i)._2))
+        )
+      }
+    }
+  }
 }

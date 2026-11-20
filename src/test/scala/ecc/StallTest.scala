@@ -142,4 +142,19 @@ class StallTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  for (secded <- Seq(false, true); stalls <- patterns) {
+    val code = HammingCode(8, secded)
+
+    s"Encoder and decoder chained ($code, $stalls)" should "return every word once and in order" in {
+      val rnd = new Random(7)
+      val data = Seq.fill(items)(BigInt(code.dataWidth, rnd))
+      test(new DecoupledChain(code)) { dut =>
+        runWithStalls(dut.clock, dut.io.in, dut.io.out, items, stalls, seed = 8)(i => dut.io.in.bits.poke(data(i).U))(
+          () => decodedValues(dut.io.out.bits),
+          i => Seq(data(i), BigInt(0), BigInt(0), BigInt(0))
+        )
+      }
+    }
+  }
 }

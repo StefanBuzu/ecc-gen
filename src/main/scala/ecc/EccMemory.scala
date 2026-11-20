@@ -48,3 +48,16 @@ class EccMemory(val depth: Int, val dataWidth: Int, val secded: Boolean = false)
   io.rdData.uncorrectable := dec.io.uncorrectable
   io.rdData.syndrome := dec.io.syndrome
 }
+
+/** Generate Verilog for the SEC and the SECDED memory, e.g.
+  * `sbt "runMain ecc.EccMemoryGen 64 32"` for 64 words of 32 bits (default 16 x 8).
+  * The files are written to `generated/memory`.
+  */
+object EccMemoryGen extends App {
+  val depth = if (args.length > 0) args(0).toInt else 16
+  val width = if (args.length > 1) args(1).toInt else 8
+  for (secded <- Seq(false, true)) {
+    println(s"memory $depth x $width: ${HammingCode(width, secded)} code words")
+    emitVerilog(new EccMemory(depth, width, secded), Array("--target-dir", "generated/memory"))
+  }
+}

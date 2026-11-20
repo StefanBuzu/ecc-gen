@@ -72,4 +72,10 @@ class EccMemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  it should "be generated for SEC and SECDED by EccMemoryGen" in {
+    EccMemoryGen.main(Array("4", "8"))
+    for (kind <- Seq("Sec", "Secded"))
+      assert(java.nio.file.Files.exists(java.nio.file.Paths.get("generated", "memory", s"EccMemory4x8$kind.sv")))
+  }
 }

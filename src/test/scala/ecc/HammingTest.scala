@@ -44,10 +44,11 @@ object HammingModel {
   def decode(code: HammingCode, codeword: BigInt): DecodeResult = {
     // the overall parity bit of SECDED is not part of the Hamming syndrome
     val syndrome = setPositions(codeword, code.hammingWidth).foldLeft(0)(_ ^ _)
-    // SECDED: a non-zero syndrome with even parity can only come from two flips,
-    // a syndrome outside the code word from even more. Do not touch the data then.
+    // A syndrome that points outside the code word can only come from several
+    // flipped bits, with or without SECDED. With SECDED, a non-zero syndrome and even
+    // parity can only come from two flips. Do not touch the data then.
     val oddParity = code.secded && codeword.bitCount % 2 == 1
-    val uncorrectable = code.secded && syndrome != 0 && (!oddParity || syndrome > code.hammingWidth)
+    val uncorrectable = syndrome > code.hammingWidth || (code.secded && syndrome != 0 && !oddParity)
     val fixed =
       if (!uncorrectable && syndrome >= 1 && syndrome <= code.hammingWidth) codeword.flipBit(syndrome - 1) else codeword
     val data = code.dataPositions.zipWithIndex.foldLeft(BigInt(0)) { case (d, (pos, i)) =>

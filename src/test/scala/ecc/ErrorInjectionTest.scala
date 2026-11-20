@@ -72,4 +72,31 @@ class ErrorInjectionTest extends AnyFlatSpec with ChiselScalatestTester {
       expectClean(dut, 2, 0x77)
     }
   }
+
+  it should "give a write priority over an injection in the same cycle" in {
+    test(new EccMemory(4, 8, secded = true)) { dut =>
+      write(dut, 1, 0x11)
+
+      dut.io.wrEn.poke(true.B)
+      dut.io.wrAddr.poke(1.U)
+      dut.io.wrData.poke(0x22.U)
+      dut.io.injectEn.poke(true.B)
+      dut.io.injectAddr.poke(1.U)
+      dut.io.injectMask.poke(0x0010.U)
+      dut.clock.step()
+      dut.io.wrEn.poke(false.B)
+      dut.io.injectEn.poke(false.B)
+
+      expectClean(dut, 1, 0x22) // the new word is stored without the error
+    }
+  }
+
+  it should "let a later write repair an injected error" in {
+    test(new EccMemory(4, 8, secded = true)) { dut =>
+      write(dut, 0, 0x3c)
+      inject(dut, 0, 0x0001)
+      write(dut, 0, 0x3c)
+      expectClean(dut, 0, 0x3c)
+    }
+  }
 }

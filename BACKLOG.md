@@ -70,9 +70,9 @@ through a pull request into `main`, and CI must pass before merging.
 - [ ] 11b README: SECDED gives no guarantee for 3 or more flipped bits; `syndrome` is only meaningful when `corrected` is set (S, from the #4 review)
 
 **Igor:**
-- [ ] 12 ECC memory: memory with encoder on write and decoder on read, depth and width as parameters (L)
-- [ ] 13 Error injection: input that flips chosen bits of a stored word (S)
-- [ ] 14 Tests for Stefan's ready/valid and pipeline (9, 10): random stalls (`ready` low), check no data is lost or duplicated (M)
+- [x] 12 ECC memory: memory with encoder on write and decoder on read, depth and width as parameters (L)
+- [x] 13 Error injection: input that flips chosen bits of a stored word (S)
+- [x] 14 Tests for Stefan's ready/valid and pipeline (9, 10): random stalls (`ready` low), check no data is lost or duplicated (M)
 
 **Together:**
 - [ ] 15 Intermediate presentation and demo (M)
@@ -83,8 +83,8 @@ through a pull request into `main`, and CI must pass before merging.
 - [ ] 16 Formal verification: prove every single error is corrected for a small width (L, optional)
 
 **Igor:**
-- [ ] 17 Resource comparison: synthesize several widths (SEC vs SECDED), collect LUTs and timing (M)
-- [ ] 18 Chart of the results (SVG) in the README (S)
+- [x] 17 Resource comparison: synthesize several widths (SEC vs SECDED), collect LUTs and timing (M)
+- [x] 18 Chart of the results (SVG) in the README (S)
 
 **Together:**
 - [ ] 19 Final README: usage, figures, results, AI usage, check all links (M)

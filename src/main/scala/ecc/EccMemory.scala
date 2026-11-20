@@ -27,6 +27,12 @@ class EccMemory(val depth: Int, val dataWidth: Int, val secded: Boolean = false)
     val wrData = Input(UInt(dataWidth.W))
     val rdAddr = Input(UInt(addrWidth.W))
     val rdData = Output(new DecodedWord(code))
+
+    // error injection: flips the bits set in `injectMask` in the stored code word
+    // at `injectAddr`, like a cosmic ray would
+    val injectEn = Input(Bool())
+    val injectAddr = Input(UInt(addrWidth.W))
+    val injectMask = Input(UInt(code.codeWidth.W))
   })
 
   // every stored word is a complete code word, `codeWidth` bits wide

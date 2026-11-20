@@ -149,6 +149,26 @@ val dec = Module(new HammingDecoderDecoupled(code, pipeline = true))
 - A new word can enter in the same cycle in which the old one leaves, so with a
   ready receiver the decoder still accepts **one word per cycle**.
 
+## ECC memory
+
+`EccMemory(depth, dataWidth, secded)` is a memory that **encodes on write and
+decodes on read**. Every word is stored as a complete code word (data plus check
+bits), so a bit that flips inside the memory is found and fixed when the word is
+read.
+
+```scala
+val mem = Module(new EccMemory(depth = 256, dataWidth = 32, secded = true))
+
+mem.io.wrEn / mem.io.wrAddr / mem.io.wrData   // write port
+mem.io.rdAddr                                 // read port address
+mem.io.rdData                                 // DecodedWord: data, corrected, uncorrectable, syndrome
+```
+
+- The **read is combinational**: `rdData` follows `rdAddr` in the same cycle.
+- The memory is not reset, so a word that was never written is undefined.
+- `sbt "runMain ecc.EccMemoryGen 64 32"` writes the SEC and the SECDED memory for
+  64 words of 32 bits to `generated/memory/`.
+
 ## Structure
 
 | File | Content |

@@ -173,6 +173,12 @@ hardware that implements it (`HammingEncoder`, `HammingDecoder`).
 - For SECDED, the encoder is checked to add the correct parity bit, and the
   decoder is checked to correct every single flip and to report **every pair of
   flipped bits** as uncorrectable.
+- The **ready/valid** wrappers are tested with **random stalls** (`StallTest`): in
+  every cycle the sender has a word and the receiver is ready at random, for
+  four different stall patterns, with and without the pipeline register. 300
+  words go through, and each word that comes out is compared with the model in
+  order. A lost or a repeated word fails the test, and so does a word that
+  changes or disappears while the receiver is not ready.
 - Tests run automatically on every push with GitHub Actions
   ([ci.yml](.github/workflows/ci.yml)).
 

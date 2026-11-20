@@ -82,6 +82,24 @@ def xilinx(verilog, top):
     return sum(n for c, n in cells.items() if re.fullmatch(r"LUT[1-6]", c))
 
 
+def markdown_table(rows):
+    """The results as a Markdown table, one line per width and module"""
+    by = {(r["width"], r["module"], r["variant"]): r for r in rows}
+    lines = [
+        "| Data bits | Module | LUT4 SEC | LUT4 SECDED | LUT4 extra | Fmax SEC (MHz) | Fmax SECDED (MHz) | LUT6 SEC | LUT6 SECDED |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for width in WIDTHS:
+        for kind in ("encoder", "decoder"):
+            sec, secded = by[(width, kind, "SEC")], by[(width, kind, "SECDED")]
+            extra = 100.0 * (secded["ice40_lut4"] - sec["ice40_lut4"]) / sec["ice40_lut4"]
+            lines.append(
+                f"| {width} | {kind} | {sec['ice40_lut4']} | {secded['ice40_lut4']} | {extra:+.0f} % | "
+                f"{sec['ice40_fmax_mhz']:.0f} | {secded['ice40_fmax_mhz']:.0f} | {sec['xc7_lut']} | {secded['xc7_lut']} |"
+            )
+    return "\n".join(lines)
+
+
 def main():
     WORK.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -104,6 +122,8 @@ def main():
         w.writeheader()
         w.writerows(rows)
     print("written", OUT)
+    print()
+    print(markdown_table(rows))
 
 
 if __name__ == "__main__":

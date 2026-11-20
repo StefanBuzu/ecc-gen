@@ -76,6 +76,30 @@ class StallTest extends AnyFlatSpec with ChiselScalatestTester {
 
   val items = 300
 
+  /** The decoder output as numbers, to compare with the model */
+  def decodedValues(out: DecodedWord): Seq[BigInt] =
+    Seq(
+      out.data.peekInt(),
+      BigInt(if (out.corrected.peekBoolean()) 1 else 0),
+      BigInt(if (out.uncorrectable.peekBoolean()) 1 else 0),
+      out.syndrome.peekInt()
+    )
+
+  def modelValues(r: DecodeResult): Seq[BigInt] =
+    Seq(r.data, BigInt(if (r.corrected) 1 else 0), BigInt(if (r.uncorrectable) 1 else 0), BigInt(r.syndrome))
+
+  /** Code words with no error, or with one bit flipped (SECDED: sometimes two) */
+  def damagedWords(code: HammingCode, n: Int, seed: Int): Seq[(BigInt, BigInt)] = {
+    val rnd = new Random(seed)
+    Seq.fill(n) {
+      val data = BigInt(code.dataWidth, rnd)
+      var word = HammingModel.encode(code, data)
+      val flips = if (code.secded) rnd.nextInt(3) else rnd.nextInt(2)
+      for (bit <- rnd.shuffle((0 until code.codeWidth).toList).take(flips)) word = word.flipBit(bit)
+      (data, word)
+    }
+  }
+
   for (secded <- Seq(false, true); stalls <- patterns) {
     val code = HammingCode(8, secded)
 
@@ -86,6 +110,20 @@ class StallTest extends AnyFlatSpec with ChiselScalatestTester {
         runWithStalls(dut.clock, dut.io.in, dut.io.out, items, stalls, seed = 2)(i => dut.io.in.bits.poke(data(i).U))(
           () => Seq(dut.io.out.bits.peekInt()),
           i => Seq(HammingModel.encode(code, data(i)))
+        )
+      }
+    }
+  }
+
+  for (secded <- Seq(false, true); stalls <- patterns) {
+    val code = HammingCode(8, secded)
+
+    s"HammingDecoderDecoupled ($code, $stalls)" should "not lose or repeat words and decode like the model" in {
+      val words = damagedWords(code, items, seed = 3)
+      test(new HammingDecoderDecoupled(code)) { dut =>
+        runWithStalls(dut.clock, dut.io.in, dut.io.out, items, stalls, seed = 4)(i => dut.io.in.bits.poke(words(i)._2.U))(
+          () => decodedValues(dut.io.out.bits),
+          i => modelValues(HammingModel.decode(code, words(i)._2))
         )
       }
     }

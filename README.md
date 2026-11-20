@@ -169,6 +169,24 @@ mem.io.rdData                                 // DecodedWord: data, corrected, u
 - `sbt "runMain ecc.EccMemoryGen 64 32"` writes the SEC and the SECDED memory for
   64 words of 32 bits to `generated/memory/`.
 
+### Error injection
+
+To see the code at work, the memory can flip bits on purpose. With `injectEn`
+high, the bits set in `injectMask` are flipped in the **stored code word** at
+`injectAddr` (the mask has one bit per bit of the code word, bit 0 is position 1,
+and for SECDED the top bit is the overall parity bit):
+
+```scala
+mem.io.injectEn := true.B
+mem.io.injectAddr := 3.U
+mem.io.injectMask := "b0000_0000_0100".U   // flip bit 2 of the code word at address 3
+```
+
+On the next read of that address the decoder reports `corrected` with the data
+repaired. Two flipped bits give `uncorrectable` with SECDED. A normal write has
+priority if it happens in the same cycle, and it replaces the damaged word with
+a fresh code word.
+
 ## Structure
 
 | File | Content |

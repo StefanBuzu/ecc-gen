@@ -43,6 +43,9 @@ class EccMemory(val depth: Int, val dataWidth: Int, val secded: Boolean = false)
   enc.io.data := io.wrData
   when(io.wrEn) {
     mem.write(io.wrAddr, enc.io.codeword)
+  }.elsewhen(io.injectEn) {
+    // a write wins if both happen in the same cycle
+    mem.write(io.injectAddr, mem.read(io.injectAddr) ^ io.injectMask)
   }
 
   // read: the stored code word goes through the decoder. The read is

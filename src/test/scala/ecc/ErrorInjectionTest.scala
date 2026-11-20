@@ -36,4 +36,19 @@ class ErrorInjectionTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  "EccMemory (SECDED)" should "report every injected double bit flip as uncorrectable" in {
+    val code = HammingCode(8, secded = true)
+    test(new EccMemory(2, 8, secded = true)) { dut =>
+      for (data <- Seq(BigInt(0), BigInt(0xa5), BigInt(0xff)); a <- 0 until code.codeWidth; b <- a + 1 until code.codeWidth) {
+        write(dut, 0, data)
+        inject(dut, 0, (BigInt(1) << a) | (BigInt(1) << b))
+
+        dut.io.rdAddr.poke(0.U)
+        val msg = s"data 0x${data.toString(16)}, bits $a and $b flipped"
+        dut.io.rdData.uncorrectable.expect(true.B, msg)
+        dut.io.rdData.corrected.expect(false.B, msg)
+      }
+    }
+  }
 }

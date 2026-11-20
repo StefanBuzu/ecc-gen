@@ -9,3 +9,4 @@ test_run_dir/
 *.sv
 *.v
 generated/
+__pycache__/
